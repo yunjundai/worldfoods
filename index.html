@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>世界美食大冒險 - World Food Tour</title>
+    <!-- 引入 Tailwind CSS 確保極致優雅的 UI 設計 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        foodWarm: '#FFF8F0',
+                        foodOrange: '#FF6B35',
+                        foodYellow: '#F7B801',
+                        foodBlue: '#004E64',
+                        foodGreen: '#2EC4B6'
+                    },
+                    fontFamily: {
+                        sans: ['"Outfit"', '"PingFang TC"', '"Heiti TC"', '"Microsoft JhengHei"', 'sans-serif'],
+                        playful: ['"Fredoka"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Outfit:wght@500;700;800&display=swap');
+        
+        .font-playful {
+            font-family: 'Fredoka', 'Outfit', '"PingFang TC"', sans-serif;
+        }
+
+        /* 3D 翻轉動畫：用於載入新題目 */
+        @keyframes card-flip {
+            0% { transform: rotateY(0deg) scale(1); }
+            50% { transform: rotateY(90deg) scale(0.92); }
+            100% { transform: rotateY(0deg) scale(1); }
+        }
+        .animate-card-flip {
+            animation: card-flip 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 按鈕搖晃動畫：答錯或超時 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* 正確選項流光特效 */
+        @keyframes correct-glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(46, 196, 182, 0.4); }
+            50% { box-shadow: 0 0 20px rgba(46, 196, 182, 0.8); }
+        }
+        .animate-correct-glow {
+            animation: correct-glow 0.8s ease-in-out infinite;
+        }
+
+        /* Combo 狂熱模式外框漸層動畫 */
+        @keyframes fever-glow {
+            0%, 100% { border-color: #FF6B35; box-shadow: 0 0 15px rgba(255, 107, 53, 0.7); }
+            50% { border-color: #F7B801; box-shadow: 0 0 25px rgba(247, 184, 1, 0.9); }
+        }
+        .fever-border {
+            animation: fever-glow 1.5s linear infinite;
+        }
+
+        /* 自訂旋轉與縮放動畫，增添動態趣味性 */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(2deg); }
+        }
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-fast {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+        .animate-pulse-fast {
+            animation: pulse-fast 1.2s ease-in-out infinite;
+        }
+
+        /* 隱藏滾動條但保持滾動功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-amber-50 via-orange-50 to-emerald-50 h-screen w-screen flex items-center justify-center p-2 sm:p-4 font-sans select-none overflow-hidden">
+
+    <!-- 背景裝飾性漂浮元素 -->
+    <div class="absolute top-6 left-6 text-3xl opacity-10 animate-float pointer-events-none hidden lg:block">🍕</div>
+    <div class="absolute bottom-6 left-12 text-3xl opacity-10 animate-float pointer-events-none hidden lg:block" style="animation-delay: 1s;">🍣</div>
+    <div class="absolute top-12 right-12 text-3xl opacity-10 animate-float pointer-events-none hidden lg:block" style="animation-delay: 2s;">🌮</div>
+    <div class="absolute bottom-12 right-6 text-3xl opacity-10 animate-float pointer-events-none hidden lg:block" style="animation-delay: 3s;">🥐</div>
+
+    <!-- 遊戲主容器卡片：橫向優化排版 -->
+    <div id="main-container" class="w-full max-w-4xl bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border-4 border-amber-200 p-4 sm:p-5 md:p-6 relative overflow-hidden flex flex-col justify-between h-[94vh] max-h-[580px] transition-all duration-300">
+        
+        <!-- 頂部功能列：音效開關與語系切換 -->
+        <div class="flex justify-between items-center mb-2 z-10 flex-shrink-0">
+            <div class="flex items-center gap-2">
+                <button id="sound-btn" onclick="toggleMute()" class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-amber-100 hover:bg-amber-200 text-amber-700 transition active:scale-90" title="切換音效">
+                    <svg id="sound-on-icon" class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+                    <svg id="sound-off-icon" class="w-4 h-4 sm:w-5 sm:h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>
+                </button>
+            </div>
+            
+        </div>
+
+        <!-- ==================== 1. 開始畫面 (START SCREEN - 橫向版面) ==================== -->
+        <div id="start-screen" class="flex-grow flex flex-col md:flex-row items-center justify-around gap-4 md:gap-8 overflow-hidden py-1">
+            
+            <!-- 左側大美食插圖 -->
+            <div class="relative w-24 h-24 sm:w-32 sm:h-32 md:w-44 md:h-44 flex items-center justify-center bg-amber-100 rounded-full border-4 border-dashed border-foodOrange animate-float flex-shrink-0">
+                <span class="text-5xl sm:text-6xl md:text-8xl">🍳</span>
+                <span class="absolute -top-1 -right-1 text-2xl sm:text-3xl md:text-4xl">🍕</span>
+                <span class="absolute -bottom-1 -left-1 text-2xl sm:text-3xl md:text-4xl">🍜</span>
+            </div>
+
+            <!-- 右側引導與設定區域 -->
+            <div class="text-center md:text-left flex flex-col justify-center max-w-md flex-grow">
+                <h1 id="start-title" class="text-2xl sm:text-3xl md:text-4xl font-playful font-extrabold text-foodBlue tracking-wider mb-1">
+                    世界美食大巡禮
+                </h1>
+                <p id="start-subtitle" class="text-gray-600 text-xs sm:text-sm md:text-base font-semibold mb-2 leading-relaxed">
+                    踏上令人垂涎的環球美味之旅！你能成功辨識各國最頂級的代表性美食，贏得米其林大廚稱號嗎？
+                </p>
+
+                <!-- 選擇角色頭像與天賦說明 -->
+                <div class="mb-3">
+                    <p id="avatar-label" class="text-[10px] sm:text-xs font-bold text-amber-600 uppercase tracking-widest mb-1.5 text-center md:text-left">選擇你的主廚角色</p>
+                    <div class="flex gap-2.5 justify-center md:justify-start">
+                        <button onclick="selectAvatar('🧑‍🍳', this)" class="avatar-opt w-11 h-11 sm:w-12 sm:h-12 text-xl sm:text-2xl bg-amber-50 hover:bg-amber-100 border-4 border-foodOrange rounded-xl flex items-center justify-center transition active:scale-90 shadow-sm">🧑‍🍳</button>
+                        <button onclick="selectAvatar('👩‍🍳', this)" class="avatar-opt w-11 h-11 sm:w-12 sm:h-12 text-xl sm:text-2xl bg-amber-50 hover:bg-amber-100 border-4 border-transparent rounded-xl flex items-center justify-center transition active:scale-90 shadow-sm">👩‍🍳</button>
+                        <button onclick="selectAvatar('🐱', this)" class="avatar-opt w-11 h-11 sm:w-12 sm:h-12 text-xl sm:text-2xl bg-amber-50 hover:bg-amber-100 border-4 border-transparent rounded-xl flex items-center justify-center transition active:scale-90 shadow-sm">🐱</button>
+                    </div>
+                    <!-- 天賦描述框 -->
+                    <div id="talent-desc" class="text-[11px] text-amber-800 bg-amber-50/70 p-2 rounded-xl border border-amber-200 mt-2 text-center md:text-left font-semibold min-h-[36px]">
+                        🧑‍🍳 主廚天賦：【黃金舌頭】答對獲得 1.5 倍分數！
+                    </div>
+                </div>
+
+                <button id="start-btn" onclick="startGame()" class="w-full py-2 sm:py-3 bg-gradient-to-r from-foodOrange to-amber-500 text-white font-playful text-base sm:text-lg md:text-xl font-bold rounded-xl shadow-md hover:shadow-lg active:scale-95 transition-all animate-pulse-fast">
+                    開始探險 START!
+                </button>
+            </div>
+        </div>
+
+        <!-- ==================== 2. 遊戲主畫面 (GAMEPLAY SCREEN - 左右雙欄橫式排版) ==================== -->
+        <div id="game-screen" class="hidden flex-grow flex flex-col justify-between overflow-hidden h-full">
+            
+            <!-- 左右雙欄大框架 -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 flex-grow overflow-hidden h-full">
+                
+                <!-- 【左欄】：題面展示卡片與小常識卡片 -->
+                <div class="md:col-span-5 flex flex-col gap-2 justify-center h-full overflow-hidden">
+                    <!-- 美食巨大圖示展示卡 -->
+                    <div id="food-card" class="bg-gradient-to-b from-amber-50 to-orange-50 rounded-2xl p-3 border border-amber-100 text-center shadow-inner flex flex-col justify-center items-center flex-grow max-h-[220px] md:max-h-none transition-transform duration-300">
+                        <div id="q-image-container" class="hidden w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 overflow-hidden rounded-full border-4 border-white shadow-xl mx-auto mb-2 transition-transform duration-300">
+                            <img id="q-image" src="" alt="food" class="w-full h-full object-cover">
+                        </div>
+                        <div id="q-emoji" class="text-5xl sm:text-6xl md:text-7xl filter drop-shadow-md transition-all duration-300">🍕</div>
+                        <div class="flex items-center justify-center gap-1.5 mt-1.5 flex-wrap w-full px-2">
+                            <h2 id="q-food-name" class="text-base sm:text-xl md:text-2xl font-extrabold text-foodBlue text-center leading-tight break-words max-w-full">義大利披薩</h2>
+                            <button onclick="speakCurrentFood()" class="p-1 rounded-full bg-amber-100 hover:bg-amber-200 text-foodOrange transition active:scale-90" title="朗讀讀音">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+                                </svg>
+                            </button>
+                        </div>
+                        <p id="q-prompt" class="text-gray-500 text-[10px] sm:text-xs">這是哪一個國家的代表性美食？</p>
+                    </div>
+
+                    <!-- 答題後小知識卡片：限定最大高度，防止縱向擠壓 -->
+                    <div id="feedback-panel" class="hidden p-2.5 rounded-2xl border text-left bg-emerald-50 border-emerald-200 max-h-[140px] md:max-h-[160px] overflow-y-auto no-scrollbar">
+                        <div class="flex items-start gap-2">
+                            <span id="feedback-icon" class="text-xl sm:text-2xl flex-shrink-0">🎉</span>
+                            <div class="flex-grow min-w-0">
+                                <div class="flex justify-between items-center gap-1 flex-wrap mb-0.5">
+                                    <h4 id="feedback-title" class="font-bold text-xs sm:text-sm">答對了！ Correct!</h4>
+                                    <button onclick="speakCurrentFact()" class="inline-flex items-center gap-1 py-0.5 px-2 rounded-full bg-white border border-gray-200 hover:bg-gray-50 text-[10px] text-foodBlue transition active:scale-95 shadow-xs">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+                                        </svg>
+                                        <span id="speak-fact-label" class="text-[9px]">聽小知識</span>
+                                    </button>
+                                </div>
+                                <p id="feedback-fact" class="text-[11px] sm:text-xs text-gray-600 leading-normal">小知識載入中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 【右欄】：HUD、進度、倒數計時、選項與按鈕 -->
+                <div class="md:col-span-7 flex flex-col justify-between h-full overflow-hidden">
+                    
+                    <!-- HUD 數據看板與進度條 -->
+                    <div class="flex flex-col gap-1 flex-shrink-0">
+                        <div class="grid grid-cols-3 items-center bg-amber-50 py-1 px-2.5 rounded-xl border border-amber-200 text-center text-xs">
+                            <div class="text-left">
+                                <span id="hud-progress-label" class="block text-[9px] text-amber-800 font-bold uppercase tracking-wider">進度</span>
+                                <span id="hud-progress-val" class="font-playful text-xs sm:text-sm font-bold text-foodBlue">1/10</span>
+                            </div>
+                            <div>
+                                <span id="hud-score-label" class="block text-[9px] text-amber-800 font-bold uppercase tracking-wider">得分</span>
+                                <div class="flex items-center justify-center gap-1">
+                                    <span id="hud-score-val" class="font-playful text-sm sm:text-base font-extrabold text-foodOrange">0</span>
+                                    <span id="combo-badge" class="hidden text-[8px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold animate-bounce">2x!</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span id="hud-lives-label" class="block text-[9px] text-amber-800 font-bold uppercase tracking-wider mb-0.5">生命</span>
+                                <div id="lives-container" class="flex justify-end gap-0.5 text-xs sm:text-sm">
+                                    ❤️❤️❤️
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 進度條 -->
+                        <div class="w-full bg-amber-100 rounded-full h-1 overflow-hidden mt-1">
+                            <div id="progress-bar" class="bg-gradient-to-r from-foodGreen to-emerald-400 h-full transition-all duration-500" style="width: 10%;"></div>
+                        </div>
+
+                        <!-- 倒數計時器 -->
+                        <div class="flex items-center justify-between text-[9px] sm:text-[10px] font-bold text-foodBlue mt-1">
+                            <span id="timer-label">⏱️ 剩餘時間</span>
+                            <span id="timer-text" class="font-playful text-foodOrange text-xs">10s</span>
+                        </div>
+                        <div class="w-full bg-amber-100 rounded-full h-1 overflow-hidden">
+                            <div id="timer-bar" class="bg-gradient-to-r from-foodGreen to-emerald-400 h-full transition-all duration-100" style="width: 100%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- 道具與天賦防禦狀態區 -->
+                    <div class="flex gap-2 items-center justify-start flex-shrink-0 mt-1.5">
+                        <button id="helper-5050" onclick="useHelper5050()" class="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold rounded-lg text-[10px] sm:text-xs flex items-center gap-1 border border-amber-300 transition active:scale-95">
+                            <span>🪄</span> <span id="btn-5050-label">50/50 刪除法</span>
+                        </button>
+                        <div id="shield-indicator" class="hidden items-center gap-1 bg-emerald-100 border border-emerald-300 text-emerald-800 px-2.5 py-1 rounded-lg font-bold text-[10px] sm:text-xs">
+                            <span>🛡️</span> <span id="shield-label">貓咪盾牌：作用中</span>
+                        </div>
+                    </div>
+
+                    <!-- 四選一對稱選項：採 2x2 對稱寬螢幕排版 -->
+                    <div id="options-grid" class="grid grid-cols-2 gap-2 my-2 flex-grow justify-center content-center">
+                        <!-- 由 JavaScript 動態生成 4 個按鈕 -->
+                    </div>
+
+                    <!-- 繼續按鈕 -->
+                    <button id="next-btn" onclick="nextQuestion()" class="hidden w-full py-2.5 bg-foodBlue text-white font-playful text-sm sm:text-base font-bold rounded-xl hover:bg-opacity-90 active:scale-95 transition-all shadow-md flex-shrink-0">
+                        繼續探索 NEXT ➔
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ==================== 3. 結算畫面 (RESULTS SCREEN - 橫向版面) ==================== -->
+        <div id="end-screen" class="hidden flex-grow flex flex-col justify-between overflow-hidden h-full">
+            
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 flex-grow items-center overflow-hidden">
+                
+                <!-- 左側：徽章、稱號、重新挑戰 -->
+                <div class="md:col-span-5 text-center flex flex-col justify-center items-center flex-shrink-0">
+                    <span id="end-avatar" class="text-4xl sm:text-5xl md:text-6xl block mb-1">🧑‍🍳</span>
+                    <h1 id="end-title" class="text-xl sm:text-2xl md:text-3xl font-playful font-extrabold text-foodBlue tracking-wider mb-0.5">
+                        旅途終點！
+                    </h1>
+                    <p id="end-subtitle" class="text-gray-500 text-[10px] sm:text-xs font-semibold mb-3">你已品嚐了世界各地的經典美味！</p>
+                    
+                    <button id="restart-btn" onclick="resetGame()" class="w-full max-w-xs py-2 bg-gradient-to-r from-foodOrange to-amber-500 text-white font-playful text-sm sm:text-base font-bold rounded-xl shadow-md hover:shadow-lg active:scale-95 transition-all">
+                        再次環遊世界 RETRY
+                    </button>
+                </div>
+
+                <!-- 右側：成績統計與足跡日誌 -->
+                <div class="md:col-span-7 flex flex-col gap-2.5 overflow-hidden h-full justify-center">
+                    <!-- 成績面板 -->
+                    <div class="bg-amber-50 rounded-2xl p-2.5 sm:p-3 border border-amber-200">
+                        <div class="grid grid-cols-2 gap-2 text-center">
+                            <div class="border-r border-amber-200">
+                                <span id="res-score-label" class="block text-[8px] sm:text-[9px] text-amber-700 font-bold uppercase">最終得分</span>
+                                <span id="res-score" class="font-playful text-lg sm:text-xl font-extrabold text-foodOrange">0</span>
+                            </div>
+                            <div>
+                                <span id="res-accuracy-label" class="block text-[8px] sm:text-[9px] text-amber-700 font-bold uppercase">答對題數</span>
+                                <span id="res-correct-count" class="font-playful text-lg sm:text-xl font-extrabold text-foodGreen">0/10</span>
+                            </div>
+                        </div>
+
+                        <!-- 獲得稱號 -->
+                        <div class="mt-2 pt-2 border-t border-amber-200 flex items-center justify-center gap-2">
+                            <span id="res-rank-label" class="text-[8px] sm:text-[9px] text-amber-700 font-bold uppercase">頭銜</span>
+                            <div class="inline-flex items-center gap-1 bg-white px-2 py-0.5 rounded-full border shadow-xs">
+                                <span id="res-rank-badge" class="text-sm">🏅</span>
+                                <span id="res-rank-title" class="font-extrabold text-foodBlue text-xs">米其林星級主廚</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 歷史回顧足跡日誌 -->
+                    <div class="border border-amber-100 rounded-xl bg-white p-2.5 overflow-y-auto no-scrollbar max-h-[110px] md:max-h-[130px] text-left">
+                        <p id="review-title" class="text-[9px] font-bold text-amber-700 uppercase mb-1 sticky top-0 bg-white py-0.5 border-b">本次旅程足跡回顧：</p>
+                        <ul id="history-log" class="space-y-0.5 text-[10px] sm:text-xs">
+                            <!-- 動態生成答題紀錄 -->
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Canvas 用於播放勝利彩帶與噴射特效 -->
+    <canvas id="confetti-canvas" class="absolute inset-0 pointer-events-none w-full h-full z-50"></canvas>
+
+    <audio id="bgm" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3" type="audio/mpeg"></audio>
+
+    <script>
+        // ==================== 1. Web Audio API 音效引擎 ====================
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let isMuted = false;
+
+        function playSound(type) {
+            if (isMuted) return;
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'correct') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.1);
+                osc.frequency.setValueAtTime(783.99, now + 0.2);
+                osc.frequency.setValueAtTime(1046.50, now + 0.3);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.linearRampToValueAtTime(110, now + 0.4);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            } else if (type === 'victory') {
+                const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98, 2093.00];
+                notes.forEach((freq, idx) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.type = 'triangle';
+                    o.frequency.setValueAtTime(freq, now + idx * 0.12);
+                    g.gain.setValueAtTime(0.1, now + idx * 0.12);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.4);
+                    o.start(now + idx * 0.12);
+                    o.stop(now + idx * 0.12 + 0.4);
+                });
+            }
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            const bgm = document.getElementById('bgm');
+            const soundOn = document.getElementById('sound-on-icon');
+            const soundOff = document.getElementById('sound-off-icon');
+            if (isMuted) {
+                soundOn.classList.add('hidden');
+                soundOff.classList.remove('hidden');
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                }
+                if (bgm) bgm.pause();
+            } else {
+                soundOn.classList.remove('hidden');
+                soundOff.classList.add('hidden');
+                playSound('click');
+                if (bgm) bgm.volume = 0.15; bgm.play().catch(e => console.log(e));
+            }
+        }
+
+        // ==================== 1.1 Web Speech API 語音朗讀核心 ====================
+        function speakText(text, langCode) {
+            if (isMuted) return;
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = langCode === 'zh' ? 'zh-TW' : 'en-US';
+                utterance.rate = 0.95;
+                utterance.pitch = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function speakCurrentFood() {
+            if (state.shuffledQuiz.length > 0) {
+                const q = state.shuffledQuiz[state.currentQIdx];
+                speakText(q.food[state.lang], state.lang);
+            }
+        }
+
+        function speakCurrentFact() {
+            if (state.shuffledQuiz.length > 0) {
+                const q = state.shuffledQuiz[state.currentQIdx];
+                speakText(q.fact[state.lang], state.lang);
+            }
+        }
+
+        // ==================== 2. 雙語資料字典 ====================
+        const translations = {
+            zh: {
+                langBtn: "",
+                startTitle: "🌍 世界美食大巡禮 World Food Tour",
+                startSubtitle: "踏上令人垂涎的環球美味之旅！你能成功辨識各國最頂級的代表性美食，贏得米其林大廚稱號嗎？\nEmbark on a mouth-watering culinary journey around the globe! Can you identify iconic global dishes and become a Legendary Chef?",
+                avatarLabel: "選擇你的主廚角色 Choose Your Chef Character",
+                startBtn: "開始探險 START ADVENTURE! ➔",
+                hudProgress: "進度 Progress",
+                hudScore: "得分 Score",
+                hudLives: "生命 Lives",
+                prompt: "這是哪一個國家的代表性美食？ Which country is this iconic dish from?",
+                nextBtn: "繼續探索 CONTINUE NEXT ➔",
+                feedbackCorrect: "🎉 太棒了！答對了！ Awesome! That's correct!",
+                feedbackWrong: "😅 差一點點！正確答案是 Oops! The correct answer is:",
+                endTitle: "🎉 旅途終點！ End of Journey!",
+                endSubtitle: "你已品嚐了世界各地的經典美味！ You have completed your tasty global food tour!",
+                resScore: "最終得分 Final Score",
+                resAccuracy: "答對題數 Accuracy",
+                resRank: "獲得頭銜 Earned Title",
+                reviewTitle: "本次旅程足跡回顧 Your Culinary Footsteps Recap:",
+                retryBtn: "再次環遊世界 PLAY AGAIN 🔄",
+                ranks: [
+                    { min: 90, title: "🏆 世界傳奇神廚 Legendary Master Chef", emoji: "👨‍🍳" },
+                    { min: 70, title: "🥈 米其林星級主廚 Michelin-starred Chef", emoji: "🏅" },
+                    { min: 40, title: "🥉 美食探險達人 Culinary Explorer", emoji: "🗺️" },
+                    { min: 0, title: "🌱 吃貨實習生 Kitchen Apprentice", emoji: "🥣" }
+                ],
+                logCorrect: "🟢 答對了！ Correct!",
+                logWrong: "🔴 答錯了，答案是 Incorrect, Answer:",
+                speakFactLabel: "聽小知識 Listen",
+                talentChef: "🧑‍🍳 主廚天賦：【黃金舌頭】答對獲得 1.5 倍分數！ Chef Talent: [Golden Tongue] 1.5x score!",
+                talentChefFemale: "👩‍🍳 女廚天賦：【時間管理大師】答題倒數時間延長至 15 秒！ Chef Talent: [Time Master] 15s timer!",
+                talentCat: "🐱 貓咪天賦：【貓咪好運】享有 1 次免扣血盾牌防護！ Cat Talent: [Lucky Cat] 1 free shield!",
+                timerLabel: "⏱️ 剩餘時間 TIME LEFT",
+                btn5050: "50/50 刪除法 Help",
+                btn5050Used: "50/50 (已使用 Used)",
+                shieldActive: "🛡️ 貓咪盾牌：作用中 Cat Shield: Active",
+                shieldUsed: "🛡️ 貓咪盾牌：已消耗 Cat Shield: Consumed",
+                timeoutMsg: "⏰ 答題超時！ Time's Up!",
+                logTimeout: "⏱️ 答題超時 Time's Up"
+            },
+            en: {}
+        };
+
+        // ==================== 3. 題目資料庫 (擴充至 18 題) ====================
+        const foodDatabase = [
+            {
+                emoji: "🍕", image: "assets/pizza_1781579700293.png",
+                food: { zh: "拿坡里披薩 Neapolitan Pizza", en: "拿坡里披薩 Neapolitan Pizza" },
+                correct: { zh: "義大利 Italy", en: "義大利 Italy" },
+                options: { zh: ["義大利 Italy", "法國 France", "美國 USA", "土耳其 Turkey"], en: ["義大利 Italy", "法國 France", "美國 USA", "土耳其 Turkey"] },
+                fact: { zh: "經典的瑪格麗特披薩顏色剛好對應義大利國旗的紅（番茄）、白（莫札瑞拉起司）、綠（羅勒）。 \n The classic Margherita pizza matches the red (tomato), white (mozzarella), and green (basil) of the Italian flag.", en: "經典的瑪格麗特披薩顏色剛好對應義大利國旗的紅（番茄）、白（莫札瑞拉起司）、綠（羅勒）。 \n The classic Margherita pizza matches the red (tomato), white (mozzarella), and green (basil) of the Italian flag." }
+            },
+            {
+                emoji: "🍣", image: "assets/sushi_1781579712032.png",
+                food: { zh: "經典握壽司 Nigiri Sushi", en: "經典握壽司 Nigiri Sushi" },
+                correct: { zh: "日本 Japan", en: "日本 Japan" },
+                options: { zh: ["韓國 Korea", "泰國 Thailand", "日本 Japan", "越南 Vietnam"], en: ["韓國 Korea", "泰國 Thailand", "日本 Japan", "越南 Vietnam"] },
+                fact: { zh: "握壽司最初在日本江戶時代是作為「速食」起源的，人們在路邊攤買了就可以直接用手拿著吃！ \n Nigiri sushi originated in Edo (Tokyo) as an early form of 'fast food' eaten by hand at food stalls!", en: "握壽司最初在日本江戶時代是作為「速食」起源的，人們在路邊攤買了就可以直接用手拿著吃！ \n Nigiri sushi originated in Edo (Tokyo) as an early form of 'fast food' eaten by hand at food stalls!" }
+            },
+            {
+                emoji: "🌮", image: "assets/taco_1781579723819.png",
+                food: { zh: "莎莎醬塔可餅 Taco with Salsa", en: "莎莎醬塔可餅 Taco with Salsa" },
+                correct: { zh: "墨西哥 Mexico", en: "墨西哥 Mexico" },
+                options: { zh: ["巴西 Brazil", "西班牙 Spain", "墨西哥 Mexico", "智利 Chile"], en: ["巴西 Brazil", "西班牙 Spain", "墨西哥 Mexico", "智利 Chile"] },
+                fact: { zh: "傳統的墨西哥塔可使用的是軟玉蜀黍餅皮（Corn Tortilla），而非我們常在美式速食看到的硬殼脆餅喔！ \n Traditional Mexican tacos use soft corn tortillas, unlike the hard shells commonly found in Tex-Mex style fast food!", en: "傳統的墨西哥塔可使用的是軟玉蜀黍餅皮（Corn Tortilla），而非我們常在美式速食看到的硬殼脆餅喔！ \n Traditional Mexican tacos use soft corn tortillas, unlike the hard shells commonly found in Tex-Mex style fast food!" }
+            },
+            {
+                emoji: "🥐", image: "assets/croissant_1781579735600.png",
+                food: { zh: "法式奶油可頌 Butter Croissant", en: "法式奶油可頌 Butter Croissant" },
+                correct: { zh: "法國 France", en: "法國 France" },
+                options: { zh: ["法國 France", "英國 UK", "德國 Germany", "瑞士 Switzerland"], en: ["法國 France", "英國 UK", "德國 Germany", "瑞士 Switzerland"] },
+                fact: { zh: "雖然可頌在法國發揚光大，但它最早的靈感原型其實是來自奧地利的傳統點心「Kipferl」！ \n Although highly associated with France, the croissant's ancestor is actually an Austrian pastry called 'Kipferl'!", en: "雖然可頌在法國發揚光大，但它最早的靈感原型其實是來自奧地利的傳統點心「Kipferl」！ \n Although highly associated with France, the croissant's ancestor is actually an Austrian pastry called 'Kipferl'!" }
+            },
+            {
+                emoji: "🍛", image: "assets/curry_1781579748720.png",
+                food: { zh: "奶油香料咖哩 Butter Chicken Curry", en: "奶油香料咖哩 Butter Chicken Curry" },
+                correct: { zh: "印度 India", en: "印度 India" },
+                options: { zh: ["泰國 Thailand", "印度 India", "馬來西亞 Malaysia", "日本 Japan"], en: ["泰國 Thailand", "印度 India", "馬來西亞 Malaysia", "日本 Japan"] },
+                fact: { zh: "印度咖哩（Masala）的核心是靈活運用數十種香料，如薑黃、小茴香、香菜籽，傳統上當地並沒有稱作『咖哩粉』的單一調味料。 \n Indian masala dishes rely on custom mixtures of spices like turmeric, cumin, and coriander. There is no traditional single ingredient called 'curry powder'.", en: "印度咖哩（Masala）的核心是靈活運用數十種香料，如薑黃、小茴香、香菜籽，傳統上當地並沒有稱作『咖哩粉』的單一調味料。 \n Indian masala dishes rely on custom mixtures of spices like turmeric, cumin, and coriander. There is no traditional single ingredient called 'curry powder'." }
+            },
+            {
+                emoji: "🧋", image: "assets/boba_1781579758821.png",
+                food: { zh: "珍珠奶茶 Bubble Milk Tea", en: "珍珠奶茶 Bubble Milk Tea" },
+                correct: { zh: "台灣 Taiwan", en: "台灣 Taiwan" },
+                options: { zh: ["香港 Hong Kong", "新加坡 Singapore", "台灣 Taiwan", "中國 China"], en: ["香港 Hong Kong", "新加坡 Singapore", "台灣 Taiwan", "中國 China"] },
+                fact: { zh: "珍奶誕生於1980年代的台灣！Q彈的粉圓與香濃奶茶完美結合，迅速風靡全球，成為代表性的茶飲文化。 \n Bubble tea was invented in Taiwan during the 1980s! The combination of chewy tapioca pearls and sweet milk tea is now a global phenomenon.", en: "珍奶誕生於1980年代的台灣！Q彈的粉圓與香濃奶茶完美結合，迅速風靡全球，成為代表性的茶飲文化。 \n Bubble tea was invented in Taiwan during the 1980s! The combination of chewy tapioca pearls and sweet milk tea is now a global phenomenon." }
+            },
+            {
+                emoji: "🥘", image: "assets/paella_1781579775407.png",
+                food: { zh: "西班牙海鮮燉飯 Seafood Paella", en: "西班牙海鮮燉飯 Seafood Paella" },
+                correct: { zh: "西班牙 Spain", en: "西班牙 Spain" },
+                options: { zh: ["西班牙 Spain", "葡萄牙 Portugal", "義大利 Italy", "希臘 Greece"], en: ["西班牙 Spain", "葡萄牙 Portugal", "義大利 Italy", "希臘 Greece"] },
+                fact: { zh: "這道料理起源於西班牙瓦倫西亞地區，傳統上用大平底雙耳淺鍋烹煮，並且番紅花（Saffron）是賦予其亮黃色的關鍵香料！ \n Originating in Valencia, Spain, Paella is traditionally cooked in a shallow flat pan over an open fire, using saffron for its vibrant golden color.", en: "這道料理起源於西班牙瓦倫西亞地區，傳統上用大平底雙耳淺鍋烹煮，並且番紅花（Saffron）是賦予其亮黃色的關鍵香料！ \n Originating in Valencia, Spain, Paella is traditionally cooked in a shallow flat pan over an open fire, using saffron for its vibrant golden color." }
+            },
+            {
+                emoji: "🍔", image: "assets/burger_1781579787865.png",
+                food: { zh: "經典美式漢堡 American Hamburger", en: "經典美式漢堡 American Hamburger" },
+                correct: { zh: "美國 USA", en: "美國 USA" },
+                options: { zh: ["德國 Germany", "英國 UK", "加拿大 Canada", "美國 USA"], en: ["德國 Germany", "英國 UK", "加拿大 Canada", "美國 USA"] },
+                fact: { zh: "雖然『漢堡』的名字跟德國城市漢堡（Hamburg）有關，但將肉餅夾入麵包、加上配料並推向全世界的，是美國的飲食文化！ \n While the name 'Hamburger' trace roots to Hamburg, Germany, the invention of putting the patty between buns with toppings was popularized in the USA.", en: "雖然『漢堡』的名字跟德國城市漢堡（Hamburg）有關，但將肉餅夾入麵包、加上配料並推向全世界的，是美國的飲食文化！ \n While the name 'Hamburger' trace roots to Hamburg, Germany, the invention of putting the patty between buns with toppings was popularized in the USA." }
+            },
+            {
+                emoji: "🍜", image: "assets/pho_1781579798516.png",
+                food: { zh: "越式牛肉河粉 Beef Pho", en: "越式牛肉河粉 Beef Pho" },
+                correct: { zh: "越南 Vietnam", en: "越南 Vietnam" },
+                options: { zh: ["越南 Vietnam", "泰國 Thailand", "柬埔寨 Cambodia", "老撾 Laos"], en: ["越南 Vietnam", "泰國 Thailand", "柬埔寨 Cambodia", "老撾 Laos"] },
+                fact: { zh: "越式河粉（Pho）的靈魂在於用牛骨長時間熬製、帶有肉桂與八角香氣的清甜高湯，吃的時候常常會擠上生檸檬並加入羅勒葉。 \n The soul of Pho lies in its clear, fragrant beef broth infused with cinnamon and star anise, traditionally served with fresh lime, basil, and bean sprouts.", en: "越式河粉（Pho）的靈魂在於用牛骨長時間熬製、帶有肉桂與八角香氣的清甜高湯，吃的時候常常會擠上生檸檬並加入羅勒葉。 \n The soul of Pho lies in its clear, fragrant beef broth infused with cinnamon and star anise, traditionally served with fresh lime, basil, and bean sprouts." }
+            },
+            {
+                emoji: "🥙", image: "assets/kebab_1781579812696.png",
+                food: { zh: "土耳其旋轉烤肉 Doner Kebab", en: "土耳其旋轉烤肉 Doner Kebab" },
+                correct: { zh: "土耳其 Turkey", en: "土耳其 Turkey" },
+                options: { zh: ["黎巴嫩 Lebanon", "埃及 Egypt", "土耳其 Turkey", "希臘 Greece"], en: ["黎巴嫩 Lebanon", "埃及 Egypt", "土耳其 Turkey", "希臘 Greece"] },
+                fact: { zh: "這是一種將調味肉片層層疊在垂直轉軸上烘烤的料理，現切薄片後夾入麵包，是享譽世界的重要土耳其美食標誌。 \n Doner Kebab features seasoned meat cooked on a vertical rotisserie. Thinly sliced grilled meat is wrapped in pita bread, making it a famous Turkish icon.", en: "這是一種將調味肉片層層疊在垂直轉軸上烘烤的料理，現切薄片後夾入麵包，是享譽世界的重要土耳其美食標誌。 \n Doner Kebab features seasoned meat cooked on a vertical rotisserie. Thinly sliced grilled meat is wrapped in pita bread, making it a famous Turkish icon." }
+            },
+            {
+                emoji: "🍲", image: "assets/tomyum_1781579825428.png",
+                food: { zh: "泰式冬蔭功湯 Tom Yum Goong", en: "泰式冬蔭功湯 Tom Yum Goong" },
+                correct: { zh: "泰國 Thailand", en: "泰國 Thailand" },
+                options: { zh: ["泰國 Thailand", "越南 Vietnam", "印尼 Indonesia", "菲律賓 Philippines"], en: ["泰國 Thailand", "越南 Vietnam", "印尼 Indonesia", "菲律賓 Philippines"] },
+                fact: { zh: "冬蔭功湯是泰國的國寶級酸辣湯，由香茅、檸檬葉、南薑等大量泰式香料熬製，Tom 指燉煮，Yum 指酸辣，Goong 則是蝦子！ \n Tom Yum Goong is a Thai national soup. 'Tom' means boiling, 'Yum' means sour and spicy, and 'Goong' means shrimp!", en: "冬蔭功湯是泰國的國寶級酸辣湯，由香茅、檸檬葉、南薑等大量泰式香料熬製，Tom 指燉煮，Yum 指酸辣，Goong 則是蝦子！ \n Tom Yum Goong is a Thai national soup. 'Tom' means boiling, 'Yum' means sour and spicy, and 'Goong' means shrimp!" }
+            },
+            {
+                emoji: "🫕", image: "assets/fondue_1781579838986.png",
+                food: { zh: "瑞士經典起司鍋 Cheese Fondue", en: "瑞士經典起司鍋 Cheese Fondue" },
+                correct: { zh: "瑞士 Switzerland", en: "瑞士 Switzerland" },
+                options: { zh: ["瑞士 Switzerland", "德國 Germany", "奧地利 Austria", "法國 France"], en: ["瑞士 Switzerland", "德國 Germany", "奧地利 Austria", "法國 France"] },
+                fact: { zh: "瑞士起司鍋是將起司放入陶鍋中加熱融化，再用長叉叉著麵包丁沾起司食用，傳統上如果麵包掉進鍋裡，那個人就要請客或接受懲罰！ \n Cheese Fondue is a Swiss dish of melted cheese served in a communal pot. Traditionally, if your bread falls into the pot, you have to buy the next round or face a penalty!", en: "瑞士起司鍋是將起司放入陶鍋中加熱融化，再用長叉叉著麵包丁沾起司食用，傳統上如果麵包掉進鍋裡，那個人就要請客或接受懲罰！ \n Cheese Fondue is a Swiss dish of melted cheese served in a communal pot. Traditionally, if your bread falls into the pot, you have to buy the next round or face a penalty!" }
+            },
+            {
+                emoji: "🐟", image: "assets/fishnchips_1781579856198.png",
+                food: { zh: "英式炸魚薯條 Fish and Chips", en: "英式炸魚薯條 Fish and Chips" },
+                correct: { zh: "英國 UK", en: "英國 UK" },
+                options: { zh: ["英國 UK", "愛爾蘭 Ireland", "澳洲 Australia", "加拿大 Canada"], en: ["英國 UK", "愛爾蘭 Ireland", "澳洲 Australia", "加拿大 Canada"] },
+                fact: { zh: "炸魚薯條在 19 世紀的英國維多利亞時代成為流行速食，在第二次世界大戰期間，它是少數幾種不受英國政府配給配額限制的食物之一。 \n Fish and Chips became a popular take-away food in the UK during the Victorian era. During WWII, it was one of the few foods not subject to rationing.", en: "炸魚薯條在 19 世紀的英國維多利亞時代成為流行速食，在第二次世界大戰期間，它是少數幾種不受英國政府配給配額限制的食物之一。 \n Fish and Chips became a popular take-away food in the UK during the Victorian era. During WWII, it was one of the few foods not subject to rationing." }
+            },
+            {
+                emoji: "🧇", image: "assets/waffle_1781579867694.png",
+                food: { zh: "比利時格子鬆餅 Belgian Waffle", en: "比利時格子鬆餅 Belgian Waffle" },
+                correct: { zh: "比利時 Belgium", en: "比利時 Belgium" },
+                options: { zh: ["比利時 Belgium", "荷蘭 Netherlands", "丹麥 Denmark", "瑞典 Sweden"], en: ["比利時 Belgium", "荷蘭 Netherlands", "丹麥 Denmark", "瑞典 Sweden"] },
+                fact: { zh: "傳統的比利時列日鬆餅使用珍珠糖，在烘烤時珍珠糖會融化形成焦糖外皮，口感扎實香甜，不需要加糖漿就非常美味！ \n Liege waffles, a popular Belgian waffle variety, use pearl sugar which caramelizes on the waffle's exterior during baking, making them rich and sweet.", en: "傳統的比利時列日鬆餅使用珍珠糖，在烘烤時珍珠糖會融化形成焦糖外皮，口感扎實香甜，不需要加糖漿就非常美味！ \n Liege waffles, a popular Belgian waffle variety, use pearl sugar which caramelizes on the waffle's exterior during baking, making them rich and sweet." }
+            },
+            {
+                emoji: "🦀", image: "assets/chillicrab_1781579878941.png",
+                food: { zh: "新加坡辣椒螃蟹 Chilli Crab", en: "新加坡辣椒螃蟹 Chilli Crab" },
+                correct: { zh: "新加坡 Singapore", en: "新加坡 Singapore" },
+                options: { zh: ["新加坡 Singapore", "馬來西亞 Malaysia", "印尼 Indonesia", "泰國 Thailand"], en: ["新加坡 Singapore", "馬來西亞 Malaysia", "印尼 Indonesia", "泰國 Thailand"] },
+                fact: { zh: "辣椒螃蟹被譽為新加坡的國文菜，雖然名字叫辣椒螃蟹，但其醬汁其實是由辣椒與番茄醬調配而成，口感甜辣滑順，通常會搭配炸饅頭沾醬吃！ \n Chilli Crab is a famous Singaporean seafood dish. Despite its name, the gravy is sweet and savoury rather than overly spicy, traditionally served with fried buns (mantou).", en: "辣椒螃蟹被譽為新加坡的國文菜，雖然名字叫辣椒螃蟹，但其醬汁其實是由辣椒與番茄醬調配而成，口感甜辣滑順，通常會搭配炸饅頭沾醬吃！ \n Chilli Crab is a famous Singaporean seafood dish. Despite its name, the gravy is sweet and savoury rather than overly spicy, traditionally served with fried buns (mantou)." }
+            },
+            {
+                emoji: "🦆", image: "assets/pekingduck_1781579890390.png",
+                food: { zh: "北京烤鴨 Peking Duck", en: "北京烤鴨 Peking Duck" },
+                correct: { zh: "中國 China", en: "中國 China" },
+                options: { zh: ["中國 China", "香港 Hong Kong", "台灣 Taiwan", "韓國 Korea"], en: ["中國 China", "香港 Hong Kong", "台灣 Taiwan", "韓國 Korea"] },
+                fact: { zh: "北京烤鴨以脆皮著稱，師傅會在桌邊現場片鴨，將帶皮鴨肉夾入薄餅中，抹上甜麵醬，再放入蔥段與黃瓜條一起食用。 \n Peking Duck is characterized by its thin, crispy skin. It is traditionally sliced in front of diners and eaten wrapped in pancakes with sweet bean sauce, scallion, and cucumber.", en: "北京烤鴨以脆皮著稱，師傅會在桌邊現場片鴨，將帶皮鴨肉夾入薄餅中，抹上甜麵醬，再放入蔥段與黃瓜條一起食用。 \n Peking Duck is characterized by its thin, crispy skin. It is traditionally sliced in front of diners and eaten wrapped in pancakes with sweet bean sauce, scallion, and cucumber." }
+            },
+            {
+                emoji: "🍲", image: "assets/kimchi_1781579901415.png",
+                food: { zh: "韓式泡菜鍋 Kimchi Jjigae", en: "韓式泡菜鍋 Kimchi Jjigae" },
+                correct: { zh: "韓國 Korea", en: "韓國 Korea" },
+                options: { zh: ["韓國 Korea", "日本 Japan", "中國 China", "越南 Vietnam"], en: ["韓國 Korea", "日本 Japan", "中國 China", "越南 Vietnam"] },
+                fact: { zh: "泡菜鍋是以發酵時間較長、酸度較高的老泡菜（Mukeunji）燉煮，加入豆腐、豬肉與洋蔥，是韓國家庭最普遍的家常料理之一。 \n Kimchi stew (Kimchi Jjigae) is made with well-fermented Kimchi (which has a sourer profile), tofu, pork, and onions. It is a staple comfort food in Korea.", en: "泡菜鍋是以發酵時間較長、酸度較高的老泡菜（Mukeunji）燉煮，加入豆腐、豬肉與洋蔥，是韓國家庭最普遍的家常料理之一。 \n Kimchi stew (Kimchi Jjigae) is made with well-fermented Kimchi (which has a sourer profile), tofu, pork, and onions. It is a staple comfort food in Korea." }
+            },
+            ];
+
+        // ==================== 4. 遊戲核心狀態與邏輯 ====================
+        let state = {
+            lang: 'zh',
+            screen: 'start',
+            selectedAvatar: '🧑‍🍳',
+            score: 0,
+            combo: 0,
+            lives: 3,
+            currentQIdx: 0,
+            userLog: [],
+            shuffledQuiz: [],
+            selectedOptionIndex: null,
+            // 新優化狀態
+            timerInterval: null,
+            timeLeft: 10,
+            maxTime: 10,
+            hasUsed5050: false,
+            shieldCount: 0
+        };
+
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function toggleLanguage() {
+            playSound('click');
+            state.lang = state.lang === 'zh' ? 'en' : 'zh';
+            updateUIByLanguage();
+        }
+
+        function updateUIByLanguage() {
+            const t = translations[state.lang];
+            
+            document.getElementById('lang-btn').innerText = t.langBtn;
+
+            // 開始畫面
+            document.getElementById('start-title').innerText = t.startTitle;
+            document.getElementById('start-subtitle').innerText = t.startSubtitle;
+            document.getElementById('avatar-label').innerText = t.avatarLabel;
+            document.getElementById('start-btn').innerText = t.startBtn;
+            updateTalentDesc();
+
+            // HUD 數據
+            document.getElementById('hud-progress-label').innerText = t.hudProgress;
+            document.getElementById('hud-score-label').innerText = t.hudScore;
+            document.getElementById('hud-lives-label').innerText = t.hudLives;
+            
+            document.getElementById('hud-progress-val').innerText = `${state.currentQIdx + 1}/${state.shuffledQuiz.length || 10}`;
+
+            // 計時與輔助提示
+            document.getElementById('timer-label').innerText = `⏱️ ${t.timerLabel}`;
+            
+            const helperBtn = document.getElementById('helper-5050');
+            if (state.hasUsed5050) {
+                document.getElementById('btn-5050-label').innerText = t.btn5050Used;
+            } else {
+                document.getElementById('btn-5050-label').innerText = t.btn5050;
+            }
+            updateShieldDisplay();
+
+            if (state.screen === 'game') {
+                const q = state.shuffledQuiz[state.currentQIdx];
+                if (q) {
+                    document.getElementById('q-food-name').innerText = q.food[state.lang];
+                    document.getElementById('q-prompt').innerText = t.prompt;
+                    
+                    const feedbackPanel = document.getElementById('feedback-panel');
+                    if (!feedbackPanel.classList.contains('hidden')) {
+                        const isCorrect = state.userLog[state.currentQIdx]?.correct;
+                        const correctAns = q.correct[state.lang];
+                        if (state.selectedOptionIndex === -1) {
+                            feedbackPanel.className = "p-2.5 rounded-2xl border-2 border-rose-200 bg-rose-50 text-rose-900 text-left flex-shrink-0 max-h-[140px] md:max-h-[160px] overflow-y-auto no-scrollbar";
+                            document.getElementById('feedback-icon').innerText = "⏰";
+                            document.getElementById('feedback-title').innerText = `${t.timeoutMsg} ${t.feedbackWrong} 【${correctAns}】`;
+                        } else {
+                            document.getElementById('feedback-icon').innerText = isCorrect ? "⭐" : "💔";
+                            document.getElementById('feedback-title').innerText = isCorrect ? t.feedbackCorrect : `${t.feedbackWrong} 【${correctAns}】`;
+                        }
+                        document.getElementById('feedback-fact').innerText = q.fact[state.lang];
+                        document.getElementById('next-btn').innerText = t.nextBtn;
+                        document.getElementById('speak-fact-label').innerText = t.speakFactLabel;
+                    }
+                    renderOptions();
+                }
+            }
+
+            // 結算畫面
+            document.getElementById('end-title').innerText = t.endTitle;
+            document.getElementById('end-subtitle').innerText = t.endSubtitle;
+            document.getElementById('res-score-label').innerText = t.resScore;
+            document.getElementById('res-accuracy-label').innerText = t.resAccuracy;
+            document.getElementById('res-rank-label').innerText = t.resRank;
+            document.getElementById('review-title').innerText = t.reviewTitle;
+            document.getElementById('restart-btn').innerText = t.retryBtn;
+
+            if (state.screen === 'end') {
+                updateChefRank();
+                renderHistoryLog();
+            }
+        }
+
+        function selectAvatar(emoji, element) {
+            playSound('click');
+            state.selectedAvatar = emoji;
+            document.querySelectorAll('.avatar-opt').forEach(btn => {
+                btn.classList.remove('border-foodOrange');
+                btn.classList.add('border-transparent');
+            });
+            element.classList.remove('border-transparent');
+            element.classList.add('border-foodOrange');
+            updateTalentDesc();
+        }
+
+        function updateTalentDesc() {
+            const descEl = document.getElementById('talent-desc');
+            const t = translations[state.lang];
+            if (state.selectedAvatar === '🧑‍🍳') {
+                descEl.innerText = t.talentChef;
+            } else if (state.selectedAvatar === '👩‍🍳') {
+                descEl.innerText = t.talentChefFemale;
+            } else if (state.selectedAvatar === '🐱') {
+                descEl.innerText = t.talentCat;
+            }
+        }
+
+        function updateShieldDisplay() {
+            const shieldInd = document.getElementById('shield-indicator');
+            const shieldLabel = document.getElementById('shield-label');
+            const t = translations[state.lang];
+            if (state.selectedAvatar === '🐱') {
+                shieldInd.classList.remove('hidden');
+                shieldInd.classList.add('flex');
+                if (state.shieldCount > 0) {
+                    shieldInd.className = "inline-flex items-center gap-1 bg-emerald-100 border border-emerald-300 text-emerald-800 px-2.5 py-1 rounded-lg font-bold text-[10px] sm:text-xs";
+                    shieldLabel.innerText = t.shieldActive;
+                } else {
+                    shieldInd.className = "inline-flex items-center gap-1 bg-gray-100 border border-gray-300 text-gray-500 px-2.5 py-1 rounded-lg font-bold text-[10px] sm:text-xs opacity-60";
+                    shieldLabel.innerText = t.shieldUsed;
+                }
+            } else {
+                shieldInd.classList.add('hidden');
+                shieldInd.classList.remove('flex');
+            }
+        }
+
+        function showScreen(screenName) {
+            state.screen = screenName;
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.add('hidden');
+
+            if (screenName === 'start') {
+                document.getElementById('start-screen').classList.remove('hidden');
+            } else if (screenName === 'game') {
+                document.getElementById('game-screen').classList.remove('hidden');
+            } else if (screenName === 'end') {
+                document.getElementById('end-screen').classList.remove('hidden');
+            }
+        }
+
+        function startGame() {
+            playSound('click');
+            const bgm = document.getElementById('bgm');
+            if (!isMuted && bgm) bgm.volume = 0.15; bgm.play().catch(e => console.log(e));
+            state.score = 0;
+            state.combo = 0;
+            state.lives = 3;
+            state.currentQIdx = 0;
+            state.userLog = [];
+            
+            // 從 18 題中隨機挑選 10 題
+            const fullPool = shuffleArray(foodDatabase);
+            state.shuffledQuiz = fullPool.slice(0, 10);
+
+            // 天賦初始化設定
+            if (state.selectedAvatar === '👩‍🍳') {
+                state.maxTime = 15;
+            } else {
+                state.maxTime = 10;
+            }
+
+            if (state.selectedAvatar === '🐱') {
+                state.shieldCount = 1;
+            } else {
+                state.shieldCount = 0;
+            }
+
+            state.hasUsed5050 = false;
+            
+            // 恢復道具按鈕樣式
+            const helperBtn = document.getElementById('helper-5050');
+            helperBtn.disabled = false;
+            helperBtn.className = "px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold rounded-lg text-[10px] sm:text-xs flex items-center gap-1 border border-amber-300 transition active:scale-95";
+
+            // 移除 Fever Mode 外框
+            document.getElementById('main-container').classList.remove('fever-border');
+
+            document.getElementById('hud-score-val').innerText = '0';
+            updateLivesDisplay();
+            updateShieldDisplay();
+            
+            showScreen('game');
+            loadQuestion();
+            updateUIByLanguage();
+        }
+
+        function updateLivesDisplay() {
+            const container = document.getElementById('lives-container');
+            container.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                if (i < state.lives) {
+                    container.innerHTML += '❤️';
+                } else {
+                    container.innerHTML += '🖤';
+                }
+            }
+        }
+
+        function startTimer() {
+            clearInterval(state.timerInterval);
+            state.timeLeft = state.maxTime;
+            updateTimerBar();
+            state.timerInterval = setInterval(() => {
+                state.timeLeft--;
+                updateTimerBar();
+                if (state.timeLeft <= 0) {
+                    clearInterval(state.timerInterval);
+                    handleTimeout();
+                }
+            }, 1000);
+        }
+
+        function updateTimerBar() {
+            const percent = (state.timeLeft / state.maxTime) * 100;
+            const timerBar = document.getElementById('timer-bar');
+            if (timerBar) {
+                timerBar.style.width = `${percent}%`;
+                if (percent > 50) {
+                    timerBar.className = "bg-gradient-to-r from-emerald-400 to-green-500 h-full transition-all duration-200";
+                } else if (percent > 20) {
+                    timerBar.className = "bg-gradient-to-r from-amber-400 to-orange-500 h-full transition-all duration-200";
+                } else {
+                    timerBar.className = "bg-gradient-to-r from-red-500 to-rose-600 h-full transition-all duration-200";
+                }
+            }
+            const timerText = document.getElementById('timer-text');
+            if (timerText) {
+                timerText.innerText = `${state.timeLeft}s`;
+            }
+        }
+
+        function handleTimeout() {
+            if (state.selectedOptionIndex !== null) return;
+            state.selectedOptionIndex = -1; // 標記為超時
+
+            playSound('wrong');
+            state.combo = 0;
+            document.getElementById('combo-badge').classList.add('hidden');
+            document.getElementById('main-container').classList.remove('fever-border');
+
+            const q = state.shuffledQuiz[state.currentQIdx];
+            const correctText = q.correct[state.lang];
+
+            state.userLog.push({
+                emoji: q.emoji,
+                foodZh: q.food.zh,
+                foodEn: q.food.en,
+                correctZh: q.correct.zh,
+                correctEn: q.correct.en,
+                correct: false
+            });
+
+            // 扣除生命值 (貓咪天賦抵擋)
+            if (state.shieldCount > 0) {
+                state.shieldCount--;
+                updateShieldDisplay();
+            } else {
+                state.lives--;
+                updateLivesDisplay();
+            }
+
+            document.getElementById('q-emoji').classList.add('opacity-50');
+            const imgContainer = document.getElementById('q-image-container');
+            if (imgContainer) imgContainer.classList.add('opacity-50');
+
+            const feedbackPanel = document.getElementById('feedback-panel');
+            const t = translations[state.lang];
+            feedbackPanel.className = "p-2.5 rounded-2xl border-2 border-rose-200 bg-rose-50 text-rose-900 text-left flex-shrink-0 max-h-[140px] md:max-h-[160px] overflow-y-auto no-scrollbar";
+            document.getElementById('feedback-icon').innerText = "⏰";
+            document.getElementById('feedback-title').innerText = `${t.timeoutMsg} ${t.feedbackWrong} 【${correctText}】`;
+            document.getElementById('feedback-fact').innerText = q.fact[state.lang];
+            feedbackPanel.classList.remove('hidden');
+
+            const nextBtn = document.getElementById('next-btn');
+            nextBtn.innerText = t.nextBtn;
+            nextBtn.classList.remove('hidden');
+
+            renderOptions();
+
+            setTimeout(() => {
+                speakCurrentFact();
+            }, 600);
+        }
+
+        function loadQuestion() {
+            document.getElementById('feedback-panel').classList.add('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+            state.selectedOptionIndex = null;
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+
+            const q = state.shuffledQuiz[state.currentQIdx];
+            
+            const progressPercent = ((state.currentQIdx + 1) / state.shuffledQuiz.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+            // 3D 翻轉卡片效果
+            const foodCard = document.getElementById('food-card');
+            foodCard.classList.remove('animate-card-flip');
+            void foodCard.offsetWidth; // 觸發 reflow
+            foodCard.classList.add('animate-card-flip');
+
+            if (q.image) {
+                document.getElementById('q-emoji').classList.add('hidden');
+                document.getElementById('q-image-container').classList.remove('hidden', 'scale-110', 'rotate-6', 'opacity-50');
+                document.getElementById('q-image').src = q.image;
+            } else {
+                document.getElementById('q-image-container').classList.add('hidden');
+                document.getElementById('q-emoji').classList.remove('hidden', 'scale-110', 'rotate-6', 'opacity-50');
+                document.getElementById('q-emoji').innerText = q.emoji;
+            }
+            document.getElementById('q-food-name').innerText = q.food[state.lang];
+
+            renderOptions();
+            startTimer();
+
+            setTimeout(() => {
+                speakCurrentFood();
+            }, 500);
+        }
+
+        function renderOptions() {
+            const q = state.shuffledQuiz[state.currentQIdx];
+            if (!q) return;
+
+            const optionsGrid = document.getElementById('options-grid');
+            optionsGrid.innerHTML = '';
+
+            const opts = q.options[state.lang];
+            const correctText = q.correct[state.lang];
+            const correctIndex = opts.indexOf(correctText);
+
+            opts.forEach((optionText, idx) => {
+                const btn = document.createElement('button');
+                btn.innerText = optionText;
+
+                if (state.selectedOptionIndex === null) {
+                    btn.className = "w-full py-2 sm:py-2.5 px-2 bg-white border-2 border-amber-200 rounded-2xl font-bold text-xs sm:text-sm md:text-base text-foodBlue hover:bg-amber-50 hover:border-foodOrange active:scale-98 transition duration-150 shadow-xs text-center break-words leading-tight flex items-center justify-center min-h-[44px] sm:min-h-[48px]";
+                    btn.onclick = (e) => submitAnswer(optionText, idx, e);
+                } else {
+                    btn.disabled = true;
+                    if (idx === correctIndex) {
+                        btn.className = "w-full py-2 sm:py-2.5 px-2 bg-emerald-100 border-2 border-emerald-400 text-emerald-800 rounded-2xl font-extrabold text-xs sm:text-sm md:text-base transition shadow-inner text-center break-words leading-tight flex items-center justify-center min-h-[44px] sm:min-h-[48px] animate-correct-glow";
+                    } else if (idx === state.selectedOptionIndex) {
+                        btn.className = "w-full py-2 sm:py-2.5 px-2 bg-rose-100 border-2 border-rose-400 text-rose-800 rounded-2xl font-extrabold text-xs sm:text-sm md:text-base transition shadow-inner text-center break-words leading-tight flex items-center justify-center min-h-[44px] sm:min-h-[48px] animate-shake";
+                    } else {
+                        btn.className = "w-full py-2 sm:py-2.5 px-2 bg-gray-50 border-2 border-gray-200 text-gray-400 rounded-2xl font-bold text-xs sm:text-sm md:text-base transition text-center opacity-60 break-words leading-tight flex items-center justify-center min-h-[44px] sm:min-h-[48px]";
+                    }
+                }
+                optionsGrid.appendChild(btn);
+            });
+        }
+
+        function useHelper5050() {
+            if (state.hasUsed5050 || state.selectedOptionIndex !== null) return;
+            playSound('click');
+            state.hasUsed5050 = true;
+
+            const helperBtn = document.getElementById('helper-5050');
+            helperBtn.disabled = true;
+            helperBtn.className = "px-2.5 py-1 bg-gray-100 text-gray-400 font-bold rounded-lg text-[10px] sm:text-xs flex items-center gap-1 border border-gray-300 transition opacity-60";
+            
+            const t = translations[state.lang];
+            document.getElementById('btn-5050-label').innerText = t.btn5050Used;
+
+            const q = state.shuffledQuiz[state.currentQIdx];
+            const opts = q.options[state.lang];
+            const correctText = q.correct[state.lang];
+            const correctIndex = opts.indexOf(correctText);
+
+            let wrongIndices = [];
+            opts.forEach((opt, idx) => {
+                if (idx !== correctIndex) {
+                    wrongIndices.push(idx);
+                }
+            });
+
+            wrongIndices = shuffleArray(wrongIndices).slice(0, 2);
+
+            const optionsGrid = document.getElementById('options-grid');
+            const buttons = optionsGrid.querySelectorAll('button');
+            wrongIndices.forEach(idx => {
+                buttons[idx].style.visibility = 'hidden';
+            });
+        }
+
+        function submitAnswer(selectedOption, clickedIndex, event) {
+            if (state.selectedOptionIndex !== null) return;
+            state.selectedOptionIndex = clickedIndex;
+
+            clearInterval(state.timerInterval);
+
+            const q = state.shuffledQuiz[state.currentQIdx];
+            const correctText = q.correct[state.lang];
+            const isCorrect = (selectedOption === correctText);
+
+            state.userLog.push({
+                emoji: q.emoji,
+                foodZh: q.food.zh,
+                foodEn: q.food.en,
+                correctZh: q.correct.zh,
+                correctEn: q.correct.en,
+                correct: isCorrect
+            });
+
+            const feedbackPanel = document.getElementById('feedback-panel');
+            const feedbackIcon = document.getElementById('feedback-icon');
+            const feedbackTitle = document.getElementById('feedback-title');
+            const feedbackFact = document.getElementById('feedback-fact');
+            const t = translations[state.lang];
+
+            if (isCorrect) {
+                playSound('correct');
+                state.combo++;
+                
+                // 計算基礎得分與倍率加成
+                let basePoints = 10;
+                if (state.combo >= 2) {
+                    basePoints *= 2;
+                }
+                
+                // 🧑‍🍳 主廚黃金舌頭 1.5x 加成
+                if (state.selectedAvatar === '🧑‍🍳') {
+                    basePoints = Math.floor(basePoints * 1.5);
+                }
+                
+                state.score += basePoints;
+                document.getElementById('hud-score-val').innerText = state.score;
+
+                // 答對時的按鈕粒子特效發射
+                if (event && event.target) {
+                    const rect = event.target.getBoundingClientRect();
+                    burstConfettiAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                }
+
+                // 連擊 UI 特效
+                const comboBadge = document.getElementById('combo-badge');
+                if (state.combo >= 2) {
+                    comboBadge.innerText = `${state.combo}x Combo!`;
+                    comboBadge.classList.remove('hidden');
+                }
+
+                // Fever Mode (Combo >= 3)
+                if (state.combo >= 3) {
+                    document.getElementById('main-container').classList.add('fever-border');
+                }
+
+                document.getElementById('q-emoji').classList.add('scale-110', 'rotate-6');
+                const imgContainer2 = document.getElementById('q-image-container');
+                if (imgContainer2) imgContainer2.classList.add('scale-110', 'rotate-6');
+
+                feedbackPanel.className = "p-2.5 rounded-2xl border-2 border-emerald-200 bg-emerald-50 text-emerald-900 text-left flex-shrink-0 max-h-[140px] md:max-h-[160px] overflow-y-auto no-scrollbar";
+                feedbackIcon.innerText = "⭐";
+                feedbackTitle.innerText = t.feedbackCorrect;
+            } else {
+                playSound('wrong');
+                state.combo = 0;
+                document.getElementById('combo-badge').classList.add('hidden');
+                document.getElementById('main-container').classList.remove('fever-border');
+
+                // 盾牌防禦扣血
+                if (state.shieldCount > 0) {
+                    state.shieldCount--;
+                    updateShieldDisplay();
+                } else {
+                    state.lives--;
+                    updateLivesDisplay();
+                }
+
+                document.getElementById('q-emoji').classList.add('opacity-50');
+                const imgContainer3 = document.getElementById('q-image-container');
+                if (imgContainer3) imgContainer3.classList.add('opacity-50');
+            const imgContainer = document.getElementById('q-image-container');
+            if (imgContainer) imgContainer.classList.add('opacity-50');
+
+                feedbackPanel.className = "p-2.5 rounded-2xl border-2 border-rose-200 bg-rose-50 text-rose-900 text-left flex-shrink-0 max-h-[140px] md:max-h-[160px] overflow-y-auto no-scrollbar";
+                feedbackIcon.innerText = "💔";
+                feedbackTitle.innerText = `${t.feedbackWrong} 【${correctText}】`;
+            }
+
+            feedbackFact.innerText = q.fact[state.lang];
+            document.getElementById('speak-fact-label').innerText = t.speakFactLabel;
+            feedbackPanel.classList.remove('hidden');
+            
+            const nextBtn = document.getElementById('next-btn');
+            nextBtn.innerText = t.nextBtn;
+            nextBtn.classList.remove('hidden');
+
+            renderOptions();
+
+            setTimeout(() => {
+                speakCurrentFact();
+            }, 600);
+        }
+
+        function nextQuestion() {
+            playSound('click');
+            if (state.lives <= 0) {
+                endGame();
+                return;
+            }
+
+            state.currentQIdx++;
+            if (state.currentQIdx < state.shuffledQuiz.length) {
+                loadQuestion();
+                document.getElementById('hud-progress-val').innerText = `${state.currentQIdx + 1}/${state.shuffledQuiz.length}`;
+            } else {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            clearInterval(state.timerInterval);
+
+            playSound('victory');
+            showScreen('end');
+            startConfettiRain();
+
+            document.getElementById('end-avatar').innerText = state.selectedAvatar;
+            document.getElementById('res-score').innerText = state.score;
+            
+            const correctCount = state.userLog.filter(log => log.correct).length;
+            document.getElementById('res-correct-count').innerText = `${correctCount}/${state.shuffledQuiz.length}`;
+
+            updateChefRank();
+            updateUIByLanguage();
+        }
+
+        function updateChefRank() {
+            const correctCount = state.userLog.filter(log => log.correct).length;
+            const accuracyRate = (correctCount / state.shuffledQuiz.length) * 100;
+            const t = translations[state.lang];
+
+            let selectedRank = t.ranks[t.ranks.length - 1];
+            for (let rank of t.ranks) {
+                if (accuracyRate >= rank.min) {
+                    selectedRank = rank;
+                    break;
+                }
+            }
+
+            document.getElementById('res-rank-badge').innerText = selectedRank.emoji;
+            document.getElementById('res-rank-title').innerText = selectedRank.title;
+        }
+
+        function renderHistoryLog() {
+            const logContainer = document.getElementById('history-log');
+            logContainer.innerHTML = '';
+            const t = translations[state.lang];
+
+            state.userLog.forEach(log => {
+                const li = document.createElement('li');
+                li.className = "flex justify-between items-center py-0.5 border-b border-gray-100";
+                
+                const foodName = state.lang === 'zh' ? log.foodZh : log.foodEn;
+                const correctAns = state.lang === 'zh' ? log.correctZh : log.correctEn;
+                
+                let feedbackStatus = "";
+                if (log.correct) {
+                    feedbackStatus = t.logCorrect;
+                } else if (log.foodZh === undefined) {
+                    feedbackStatus = t.logTimeout;
+                } else {
+                    feedbackStatus = `${t.logWrong}${correctAns}`;
+                }
+
+                li.innerHTML = `
+                    <span class="font-medium text-gray-700">${log.emoji} ${foodName}</span>
+                    <span class="font-bold">${feedbackStatus}</span>
+                `;
+                logContainer.appendChild(li);
+            });
+        }
+
+        function resetGame() {
+            playSound('click');
+            showScreen('start');
+            stopConfetti();
+            clearInterval(state.timerInterval);
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        // ==================== 5. 升級版純 JS 粒子特效 ====================
+        let canvas = null;
+        let ctx = null;
+        let animationFrameId = null;
+        let particles = [];
+        let effectMode = 'rain'; // 'rain' 或 'burst'
+
+        function initConfetti() {
+            canvas = document.getElementById('confetti-canvas');
+            if (canvas) {
+                ctx = canvas.getContext('2d');
+                resizeCanvas();
+            }
+        }
+
+        function resizeCanvas() {
+            if (canvas) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        class Particle {
+            constructor(x, y, isBurst = false) {
+                this.isBurst = isBurst;
+                this.x = x !== undefined ? x : Math.random() * (canvas ? canvas.width : window.innerWidth);
+                this.y = y !== undefined ? y : Math.random() * (canvas ? canvas.height : window.innerHeight) - 50;
+                this.size = Math.random() * 6 + 4;
+                this.color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+                
+                if (isBurst) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = Math.random() * 6 + 4;
+                    this.speedX = Math.cos(angle) * speed;
+                    this.speedY = Math.sin(angle) * speed;
+                    this.gravity = 0.25;
+                    this.alpha = 1.0;
+                    this.decay = Math.random() * 0.02 + 0.015;
+                } else {
+                    this.speedY = Math.random() * 3 + 2;
+                    this.speedX = Math.random() * 2 - 1;
+                    this.gravity = 0;
+                    this.alpha = 1.0;
+                    this.decay = 0;
+                }
+                
+                this.rotation = Math.random() * 360;
+                this.rotationSpeed = Math.random() * 4 - 2;
+            }
+
+            update() {
+                if (this.isBurst) {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    this.speedY += this.gravity;
+                    this.alpha -= this.decay;
+                } else {
+                    this.y += this.speedY;
+                    this.x += this.speedX;
+                    if (canvas && this.y > canvas.height) {
+                        this.y = -10;
+                        this.x = Math.random() * canvas.width;
+                    }
+                }
+                this.rotation += this.rotationSpeed;
+            }
+
+            draw() {
+                if (!ctx) return;
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate((this.rotation * Math.PI) / 180);
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                
+                // 畫不同形狀的粒子（正方形與圓形交替）
+                if (this.size % 2 === 0) {
+                    ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        function burstConfettiAt(x, y) {
+            if (!canvas) return;
+            effectMode = 'burst';
+            for (let i = 0; i < 30; i++) {
+                particles.push(new Particle(x, y, true));
+            }
+            if (!animationFrameId) {
+                animate();
+            }
+        }
+
+        function startConfettiRain() {
+            if (!canvas) return;
+            effectMode = 'rain';
+            particles = [];
+            for (let i = 0; i < 80; i++) {
+                particles.push(new Particle());
+            }
+            if (!animationFrameId) {
+                animate();
+            }
+        }
+
+        function animate() {
+            if (!ctx || !canvas) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 更新並繪製所有粒子
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.update();
+                p.draw();
+                
+                // 移除透明度過低的爆發粒子
+                if (p.isBurst && p.alpha <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            if (particles.length > 0) {
+                animationFrameId = requestAnimationFrame(animate);
+            } else {
+                animationFrameId = null;
+            }
+        }
+
+        function stopConfetti() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            particles = [];
+            if (ctx && canvas) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        // ==================== 6. 初始化載入 ====================
+        window.onload = function() {
+            initConfetti();
+            updateUIByLanguage();
+        }
+    </script>
+</body>
+</html>
